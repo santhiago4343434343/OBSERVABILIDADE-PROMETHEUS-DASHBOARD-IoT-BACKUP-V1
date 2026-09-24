@@ -1,0 +1,39 @@
+name: CD
+
+# Só publica quando entra código na main (o "entregar" oficial)
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read      # ler o código
+      packages: write     # permissão pra publicar imagem no GHCR
+    # matrix = repete os passos abaixo pra cada serviço da lista, em paralelo
+    strategy:
+      matrix:
+        service: [backend, sensor, frontend]
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Loga no GitHub Container Registry usando o token que o próprio GitHub
+      # fornece (não precisa criar segredo nenhum)
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push da imagem (${{ matrix.service }})
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/obs-${{ matrix.service }}:latest
