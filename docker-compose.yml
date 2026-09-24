@@ -1,4 +1,4 @@
-servicess:
+services:
   backend:
     build: ./backend
     container_name: obs-backend
