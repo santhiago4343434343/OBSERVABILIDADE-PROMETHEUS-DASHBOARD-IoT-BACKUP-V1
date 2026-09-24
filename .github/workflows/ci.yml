@@ -1,0 +1,20 @@
+name: CI
+
+# Roda em qualquer push e em Pull Requests (não depende de main/master)
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Baixa o código do repositório pra dentro da máquina do GitHub
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      # 2) Valida o docker-compose (pega erro de YAML/config antes de tudo)
+      - name: Validar o docker-compose
+        run: docker compose config
+
+      # 3) Builda as imagens que têm Dockerfile (backend, sensor, frontend)
+      - name: Buildar as imagens
+        run: docker compose build
