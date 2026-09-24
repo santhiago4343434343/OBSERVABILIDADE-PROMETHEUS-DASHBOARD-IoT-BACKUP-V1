@@ -1,0 +1,26 @@
+# Config do blackbox_exporter — define os "módulos" (tipos de checagem).
+modules:
+  # Só verifica se a porta TCP aceita conexão (serviço está escutando).
+  # É o que usamos pra METEORA e TRIP: robusto e não depende de rota/HTTP.
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      # Força IPv4. Sem isso, o host pode resolver pra IPv6 (tcp6) e dar
+      # "network is unreachable", porque a rede do container é só IPv4.
+      preferred_ip_protocol: ip4
+      ip_protocol_fallback: false
+
+  # HTTP: considera "no ar" quando a resposta é 2xx. (pronto pra usar depois,
+  # quando quiser checar um endpoint de health específico em vez da porta.)
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+
+  # Ping ICMP (precisa do cap_add NET_RAW no compose).
+  icmp:
+    prober: icmp
+    timeout: 5s

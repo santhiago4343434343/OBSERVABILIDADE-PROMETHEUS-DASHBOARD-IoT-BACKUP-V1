@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+node_modules/
+dist/
+.angular/
+alertmanager/alertmanager.yml
+*.env
+.vscode/
+.DS_Store
+*.log

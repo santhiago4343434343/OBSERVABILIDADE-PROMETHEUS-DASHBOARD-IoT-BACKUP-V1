@@ -1,0 +1,94 @@
+services:
+  backend:
+    build: ./backend
+    container_name: obs-backend
+    restart: unless-stopped
+    environment:
+      - PROMETHEUS_URL=http://prometheus:9090
+    ports:
+      - "8010:8000"
+    networks:
+      - obs-net
+
+  sensor:
+    build: ./sensor
+    container_name: obs-sensor
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    networks:
+      - obs-net
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: obs-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    networks:
+      - obs-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: obs-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - obs-net
+    depends_on:
+      - backend
+      - sensor
+      - node-exporter
+      - blackbox-exporter
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: obs-alertmanager
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://localhost:9093"
+      # depois  (monta a pasta inteira, que agora tem 2 arquivos)
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+    ports:
+      - "9093:9093"
+    networks:
+      - obs-net
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: obs-blackbox
+    restart: unless-stopped
+    cap_add:
+      - NET_RAW
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    ports:
+      - "9115:9115"
+    networks:
+      - obs-net
+
+  frontend:
+    build: ./frontend
+    container_name: obs-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - obs-net
+    depends_on:
+      - backend
+
+networks:
+  obs-net:
+    driver: bridge
+
+volumes:
+  prometheus-data:

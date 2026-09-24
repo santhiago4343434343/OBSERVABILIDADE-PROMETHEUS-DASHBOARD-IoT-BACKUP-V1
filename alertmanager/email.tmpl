@@ -1,0 +1,37 @@
+{{ define "email.custom.subject" }}{{ if eq .Status "firing" }}🔴 [ALERTA] Serviço(s) fora do ar{{ else }}✅ [OK] Serviço(s) restabelecido(s){{ end }}{{ end }}
+
+{{ define "email.custom.html" }}
+<!DOCTYPE html>
+<html>
+  <body style="font-family: Arial, sans-serif; background:#0f172a; color:#e2e8f0; padding:24px; margin:0;">
+    <div style="max-width:560px; margin:0 auto; background:#1e293b; border-radius:12px; overflow:hidden;">
+
+      {{ if .Alerts.Firing }}
+      <div style="background:#dc2626; color:#fff; padding:16px 20px; font-size:18px; font-weight:bold;">🔴 Serviço(s) fora do ar</div>
+      <div style="padding:16px 20px;">
+        {{ range .Alerts.Firing }}
+        <p style="margin:0 0 14px;"><b style="color:#fca5a5;">{{ .Labels.servico }}</b> está <b>FORA DO AR</b><br>
+        <span style="color:#94a3b8; font-size:13px;">{{ .Annotations.description }}</span></p>
+        {{ end }}
+      </div>
+      {{ end }}
+
+      {{ if .Alerts.Resolved }}
+      <div style="background:#16a34a; color:#fff; padding:16px 20px; font-size:18px; font-weight:bold;">✅ Serviço(s) restabelecido(s)</div>
+      <div style="padding:16px 20px;">
+        {{ range .Alerts.Resolved }}
+        <p style="margin:0 0 14px;"><b style="color:#86efac;">{{ .Labels.servico }}</b> foi <b>RESTABELECIDO</b> e voltou ao ar. ✅</p>
+        {{ end }}
+      </div>
+      {{ end }}
+
+      <div style="padding:4px 20px 24px; text-align:center;">
+        <p style="color:#94a3b8; font-size:13px; margin:0 0 14px;">Para mais informações, acesse o painel:</p>
+        <a href="http://localhost:9093" style="display:inline-block; background:#3987e5; color:#fff; text-decoration:none; font-weight:bold; padding:12px 26px; border-radius:8px; font-size:14px;">Abrir o Painel de Observabilidade →</a>
+      </div>
+
+      <div style="padding:12px 20px; background:#0f172a; color:#64748b; font-size:12px; text-align:center;">powered by Alertmanager · Painel de Observabilidade</div>
+    </div>
+  </body>
+</html>
+{{ end }}

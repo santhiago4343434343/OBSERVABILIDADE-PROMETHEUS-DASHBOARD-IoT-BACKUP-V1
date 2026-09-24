@@ -1,0 +1,59 @@
+global:
+  scrape_interval: 15s      # com que frequência o Prometheus coleta métricas
+  evaluation_interval: 15s  # com que frequência avalia regras de alerta (v1 ainda não usa)
+
+# Arquivos com as regras de alerta (caminho relativo a /etc/prometheus)
+rule_files:
+  - "alerts.yml"
+
+# Pra onde o Prometheus manda os alertas que dispararem
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # Coleta as métricas expostas pelo próprio backend (latência + jitter)
+  - job_name: "painel-observabilidade-backend"
+    static_configs:
+      - targets: ["backend:8000"]
+
+  # Sensor(es) IoT — MESMA engrenagem do backend, só muda a fonte do dado.
+  - job_name: "sensores-iot"
+    static_configs:
+      - targets: ["sensor:8001"]
+
+  # node_exporter — CPU/RAM/disco da máquina Linux (VM do WSL2/Docker)
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # windows_exporter — CPU/RAM/disco do WINDOWS (o "Gerenciador de Tarefas").
+  # Roda NATIVO no Windows na porta 9182; o Prometheus alcança via host.docker.internal.
+  # Fica "DOWN" até você instalar o windows_exporter no Windows (é esperado).
+  - job_name: "windows-exporter"
+    static_configs:
+      - targets: ["host.docker.internal:9182"]
+
+  # Disponibilidade do METEORA e do TRIP-BUS-NATIONAL (tcp_connect via host).
+  - job_name: "servicos-monitorados"
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+        labels:
+          servico: "METEORA"
+      - targets: ["host.docker.internal:3001"]
+        labels:
+          servico: "TRIP-API"
+      - targets: ["host.docker.internal:4300"]
+        labels:
+          servico: "TRIP-frontend"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [servico]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

@@ -1,0 +1,278 @@
+<div class="min-h-screen bg-slate-950 text-slate-100">
+  <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+
+    <!-- Cabeçalho -->
+    <header class="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">
+          Painel de Observabilidade
+        </h1>
+        <p class="mt-1 text-sm text-slate-400">
+          Sensores IoT, infraestrutura, latência e disponibilidade dos serviços
+        </p>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-400">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+        </span>
+        atualiza em tempo real
+      </div>
+    </header>
+
+    <!-- Banner de erro -->
+    <div
+      *ngIf="erro"
+      class="mb-6 flex items-start gap-2 rounded-lg border border-rose-800/60 bg-rose-950/50 px-4 py-3 text-sm text-rose-200"
+    >
+      <span aria-hidden="true">⚠</span>
+      <span>
+        Não foi possível falar com a API
+        (<code class="font-mono">/api/status</code>). Verifique se o backend está no ar.
+      </span>
+    </div>
+
+    <!-- Sensores IoT -->
+    <section class="mb-10">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+        Sensores IoT
+      </h2>
+
+      <div
+        *ngIf="sensores.length; else semSensores"
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <article
+          *ngFor="let s of sensores"
+          class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-slate-700"
+        >
+          <p class="truncate font-mono text-sm text-sky-300" [title]="s.sensor">
+            {{ s.sensor }}
+          </p>
+          <div class="mt-4 flex items-baseline gap-1.5">
+            <span class="text-3xl font-semibold tabular-nums text-slate-100">
+              {{ s.temperatura_c | number: '1.0-1' }}
+            </span>
+            <span class="text-sm text-slate-500">°C</span>
+          </div>
+          <div class="mt-2 text-sm text-slate-400">
+            umidade
+            <span class="ml-1 font-medium tabular-nums text-slate-200">
+              {{ s.umidade_pct | number: '1.0-1' }}%
+            </span>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #semSensores>
+        <div class="rounded-xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-sm text-slate-400">
+          Nenhum sensor respondeu ainda. Confirme que o serviço
+          <code class="font-mono text-slate-300">sensor</code> subiu.
+        </div>
+      </ng-template>
+
+      <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+          <app-grafico-temporal
+            [series]="seriesTemperatura"
+            unidade="°C"
+            titulo="Temperatura — últimos 15 min"
+          ></app-grafico-temporal>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+          <app-grafico-temporal
+            [series]="seriesUmidade"
+            unidade="%"
+            titulo="Umidade — últimos 15 min"
+          ></app-grafico-temporal>
+        </div>
+      </div>
+    </section>
+
+    <!-- Infraestrutura (CPU / memória reais) -->
+    <section class="mb-10">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+        Infraestrutura — CPU / memória
+      </h2>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <!-- Linux / Docker (node_exporter) -->
+        <article class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-slate-200">Linux (Docker / WSL2)</p>
+            <span class="font-mono text-xs text-slate-500">node_exporter</span>
+          </div>
+
+          <!-- CPU -->
+          <div class="mt-4">
+            <div class="flex items-baseline justify-between text-sm">
+              <span class="text-slate-400">CPU</span>
+              <span class="font-medium tabular-nums text-slate-100">
+                {{ infra?.linux?.cpu_pct != null ? (infra!.linux.cpu_pct | number: '1.0-1') + '%' : '—' }}
+              </span>
+            </div>
+            <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div class="h-full rounded-full bg-sky-500" [style.width.%]="infra?.linux?.cpu_pct ?? 0"></div>
+            </div>
+          </div>
+
+          <!-- RAM -->
+          <div class="mt-3">
+            <div class="flex items-baseline justify-between text-sm">
+              <span class="text-slate-400">Memória</span>
+              <span class="font-medium tabular-nums text-slate-100">
+                {{ infra?.linux?.ram_pct != null ? (infra!.linux.ram_pct | number: '1.0-1') + '%' : '—' }}
+              </span>
+            </div>
+            <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div class="h-full rounded-full bg-violet-500" [style.width.%]="infra?.linux?.ram_pct ?? 0"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Windows (windows_exporter) -->
+        <article class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-slate-200">Windows</p>
+            <span class="font-mono text-xs text-slate-500">windows_exporter</span>
+          </div>
+
+          <!-- CPU -->
+          <div class="mt-4">
+            <div class="flex items-baseline justify-between text-sm">
+              <span class="text-slate-400">CPU</span>
+              <span class="font-medium tabular-nums text-slate-100">
+                {{ infra?.windows?.cpu_pct != null ? (infra!.windows.cpu_pct | number: '1.0-1') + '%' : '—' }}
+              </span>
+            </div>
+            <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div class="h-full rounded-full bg-sky-500" [style.width.%]="infra?.windows?.cpu_pct ?? 0"></div>
+            </div>
+          </div>
+
+          <!-- RAM -->
+          <div class="mt-3">
+            <div class="flex items-baseline justify-between text-sm">
+              <span class="text-slate-400">Memória</span>
+              <span class="font-medium tabular-nums text-slate-100">
+                {{ infra?.windows?.ram_pct != null ? (infra!.windows.ram_pct | number: '1.0-1') + '%' : '—' }}
+              </span>
+            </div>
+            <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div class="h-full rounded-full bg-violet-500" [style.width.%]="infra?.windows?.ram_pct ?? 0"></div>
+            </div>
+          </div>
+
+          <!-- Dica quando o windows_exporter ainda não está instalado -->
+          <p
+            *ngIf="infra?.windows?.cpu_pct == null && infra?.windows?.ram_pct == null"
+            class="mt-4 text-xs text-slate-500"
+          >
+            Aguardando o <span class="font-mono">windows_exporter</span> (instale no Windows,
+            porta 9182).
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Backend: rotas monitoradas -->
+    <section class="mb-10">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+        Backend — rotas monitoradas
+      </h2>
+
+      <div
+        *ngIf="rotasBackend.length; else semRotas"
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <article
+          *ngFor="let rota of rotasBackend"
+          class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-slate-700"
+        >
+          <p class="truncate font-mono text-sm text-sky-300" [title]="rota[0]">
+            {{ rota[0] }}
+          </p>
+          <div class="mt-4 flex items-baseline gap-1.5">
+            <span class="text-3xl font-semibold tabular-nums text-slate-100">
+              {{ rota[1].latencia_media_ms | number: '1.0-2' }}
+            </span>
+            <span class="text-sm text-slate-500">ms latência</span>
+          </div>
+          <div class="mt-4 flex items-center justify-between text-sm">
+            <span class="text-slate-400">
+              jitter
+              <span class="ml-1 font-medium tabular-nums text-slate-200">
+                {{ rota[1].jitter_ms | number: '1.0-2' }} ms
+              </span>
+            </span>
+            <span class="text-slate-400">
+              amostras
+              <span class="ml-1 font-medium tabular-nums text-slate-200">
+                {{ rota[1].amostras }}
+              </span>
+            </span>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #semRotas>
+        <div class="rounded-xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-sm text-slate-400">
+          Aguardando as primeiras amostras. Gere tráfego no backend, por exemplo:
+          <code class="mt-2 block font-mono text-xs text-slate-300">
+            curl http://localhost:8010/health
+          </code>
+        </div>
+      </ng-template>
+    </section>
+
+    <!-- Serviços externos: ping -->
+    <section>
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+        Serviços externos — ping
+      </h2>
+
+      <div
+        *ngIf="servicosExternos.length; else semServicos"
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <article
+          *ngFor="let svc of servicosExternos"
+          class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-slate-700"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <p class="truncate font-mono text-sm text-slate-200" [title]="svc.instance">
+              {{ svc.instance }}
+            </p>
+            <span
+              *ngIf="svc.disponivel"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300"
+            >
+              <span aria-hidden="true">●</span> Disponível
+            </span>
+            <span
+              *ngIf="!svc.disponivel"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-500/15 px-2.5 py-0.5 text-xs font-medium text-rose-300"
+            >
+              <span aria-hidden="true">✕</span> Indisponível
+            </span>
+          </div>
+          <div class="mt-4 flex items-baseline gap-1.5">
+            <span class="text-3xl font-semibold tabular-nums text-slate-100">
+              {{ svc.ping_ms | number: '1.0-2' }}
+            </span>
+            <span class="text-sm text-slate-500">ms ping</span>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #semServicos>
+        <div class="rounded-xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-sm text-slate-400">
+          Nenhum serviço externo respondeu ainda. Ajuste os
+          <code class="font-mono text-slate-300">targets</code> em
+          <code class="font-mono text-slate-300">prometheus/prometheus.yml</code>.
+        </div>
+      </ng-template>
+    </section>
+
+  </div>
+</div>
