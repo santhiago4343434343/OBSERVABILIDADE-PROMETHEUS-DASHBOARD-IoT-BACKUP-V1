@@ -1,20 +1,50 @@
-name: CI
+name: CI/CD
 
-# Roda em qualquer push e em Pull Requests (não depende de main/master)
+# Roda em qualquer push e em Pull Requests
 on: [push, pull_request]
 
 jobs:
+  # ===== CI: valida e builda (o "portão") =====
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1) Baixa o código do repositório pra dentro da máquina do GitHub
       - name: Baixar o código
         uses: actions/checkout@v4
 
-      # 2) Valida o docker-compose (pega erro de YAML/config antes de tudo)
       - name: Validar o docker-compose
         run: docker compose config
 
-      # 3) Builda as imagens que têm Dockerfile (backend, sensor, frontend)
       - name: Buildar as imagens
         run: docker compose build
+
+  # ===== CD: só publica SE o build passar, e só na main =====
+  publish:
+    needs: build   # <-- espera o job "build" terminar COM SUCESSO
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [backend, sensor, frontend]
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push da imagem (${{ matrix.service }})
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/obs-${{ matrix.service }}:latest
