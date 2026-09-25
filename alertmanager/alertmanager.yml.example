@@ -1,0 +1,28 @@
+# EXEMPLO de configuração do Alertmanager.
+# Copie este arquivo para "alertmanager.yml" e preencha com as SUAS credenciais do Mailtrap:
+#   cp alertmanager/alertmanager.yml.example alertmanager/alertmanager.yml
+# O arquivo real (alertmanager.yml) está no .gitignore para não vazar segredo.
+
+route:
+  receiver: "email-mailtrap"
+  group_by: ["alertname"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 1h
+
+receivers:
+  - name: "email-mailtrap"
+    email_configs:
+      - to: "voce@exemplo.com"
+        from: "alertmanager@observabilidade.local"
+        smarthost: "sandbox.smtp.mailtrap.io:587"
+        auth_username: "SEU_USERNAME_MAILTRAP"   # <-- troque pelo Username da sua inbox
+        auth_password: "SEU_PASSWORD_MAILTRAP"   # <-- troque pelo Password da sua inbox
+        require_tls: true
+        send_resolved: true
+        headers:
+          Subject: '{{ template "email.custom.subject" . }}'
+        html: '{{ template "email.custom.html" . }}'
+
+templates:
+  - "/etc/alertmanager/email.tmpl"
