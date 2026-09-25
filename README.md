@@ -98,7 +98,7 @@ docker compose up -d
 | Serviço | URL |
 |---|---|
 | 🖥️ Painel (Angular) | http://localhost:8080 |
-| 📊 Prometheus | http://localhost:9090 |
+| 📊 Prometheus | http://localhost:9090/targets |
 | 🔔 Alertmanager | http://localhost:9093 |
 
 ## 🔔 Alertas
