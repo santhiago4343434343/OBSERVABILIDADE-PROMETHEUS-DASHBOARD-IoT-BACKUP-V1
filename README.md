@@ -116,23 +116,22 @@ Ou seja: **código quebrado nunca vira imagem publicada.** O badge no topo deste
 
 ## 📂 Estrutura
 
-**
-"
+```
 .
-├── .github/workflows/ci.yml # pipeline CI/CD
-├── backend/ # API FastAPI
-├── sensor/ # exporter IoT (Python)
-├── frontend/ # Angular 18 + Tailwind v4 (servido por Nginx)
+├── .github/workflows/ci.yml     # pipeline CI/CD
+├── backend/                     # API FastAPI
+├── sensor/                      # exporter IoT (Python)
+├── frontend/                    # Angular 18 + Tailwind v4 (servido por Nginx)
 ├── prometheus/
-│ ├── prometheus.yml # scrape + regras + alerting
-│ └── alerts.yml # regra de disponibilidade
+│   ├── prometheus.yml           # scrape + regras + alerting
+│   └── alerts.yml               # regra de disponibilidade
 ├── alertmanager/
-│ ├── alertmanager.yml.example # modelo de config (sem segredo)
-│ └── email.tmpl # template HTML do e-mail
+│   ├── alertmanager.yml.example # modelo de config (sem segredo)
+│   └── email.tmpl               # template HTML do e-mail
 ├── blackbox/
-│ └── blackbox.yml # config do blackbox_exporter
+│   └── blackbox.yml             # config do blackbox_exporter
 └── docker-compose.yml
-
+```
 
 ## 🗺️ Roadmap
 
